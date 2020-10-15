@@ -1,11 +1,14 @@
 import os
 
 from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
 # Make sure we use the right environment
 app.config.from_object(os.environ["APP_SETTINGS"])
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
 
 
 @app.route("/")
