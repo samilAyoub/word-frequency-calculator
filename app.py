@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask
+from flask import Flask, render_template
 
 from models import db
 
@@ -19,7 +19,7 @@ def init_db():
 
 @app.route("/")
 def hello():
-    return "Hello World!"
+    render_template('index.html')
 
 
 if __name__ == "__main__":
