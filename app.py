@@ -17,9 +17,9 @@ def init_db():
     db.create_all()
 
 
-@app.route("/")
+@app.route("/", methods=['POST', 'GET'])
 def hello():
-    render_template('index.html')
+    return render_template('index.html')
 
 
 if __name__ == "__main__":
