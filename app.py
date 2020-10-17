@@ -92,7 +92,7 @@ def store_results(url, result):
 
 @app.route("/", methods=['POST', 'GET'])
 def hello():
-    results = []
+    results = {}
     errors = []
     if request.method == 'POST':
         # Get URL that user has entred
@@ -106,7 +106,8 @@ def hello():
             errors.append(msg)
         if r:
             result = html_text_preprocessing(r.text)
-            results.append(result)
+            logger.debug("Result: %s", result)
+            results = result
             try:
                 store_results(url, result)
                 logger.debug("Stored: %s", result)
@@ -114,4 +115,5 @@ def hello():
                 msg = str(e)
                 errors.append(msg)
                 logger.debug("Store result error: %s", msg)
-    return render_template('index.html')
+
+    return render_template('index.html', errors=errors, results=results)
