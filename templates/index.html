@@ -41,10 +41,10 @@
             <th scope="col">Count</th>
           </tr>
         </thead>
-        {% for key, value in result.items()%}
+        {% for word in result%}
         <tr>
-          <td>{{ key }}</td>
-          <td>{{ value }}</td>
+          <td>{{ word[0] }}</td>
+          <td>{{ word[1] }}</td>
         </tr>
         {% endfor %}
       </table>

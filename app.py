@@ -43,14 +43,17 @@ def request_handler(url):
     return r
 
 
-def html_text_preprocessing(html_text):
+def k_most_commons(html_text, k):
     """
-    Count words in a HTML text.
+    Return k most common words in a given HTML text.
 
     :param html_text: HTML text
+    :param k: Number of most common words to return
     :type html_text: String
-    :returns: Count each word in HTML text
-    :rtype: Counter
+    :type k: int
+    :returns: List of tuples, each tuple have tow elements. First one is the 
+    word, and the second one is its number of occurrences.
+    :rtype: List
     """
 
     # Clean text by removing HTML tags.
@@ -68,9 +71,7 @@ def html_text_preprocessing(html_text):
     # Eliminate stop words.
     no_stop_words = [w for w in raw_words if w.lower() not in stops]
     no_stop_words_count = Counter(no_stop_words)
-    logger.debug('10 most common elements: %s',
-                 no_stop_words_count.most_common(10))
-    return no_stop_words_count
+    return no_stop_words_count.most_common(k)
 
 
 def store_results(url, result):
@@ -93,7 +94,7 @@ def store_results(url, result):
 
 @app.route("/", methods=['POST', 'GET'])
 def hello():
-    result = {}
+    result = []
     errors = []
     if request.method == 'POST':
         # Get URL that user has entred
@@ -105,7 +106,9 @@ def hello():
             msg = str(e)
             errors.append(msg)
         if r:
-            result = html_text_preprocessing(r.text)
+            # Get 10 most common words.
+            result = k_most_commons(r.text, 10)
+            logger.debug("10 most common words: %s", result)
             try:
                 store_results(url, result)
                 logger.debug("Result stored in database")
