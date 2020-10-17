@@ -105,7 +105,7 @@ def hello():
             msg = str(e)
             errors.append(msg)
         if r:
-            result = html_text_preprocessing(r.text).items()
+            result = html_text_preprocessing(r.text)
             results.append(result)
             try:
                 store_results(url, result)
