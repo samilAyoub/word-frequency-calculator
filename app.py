@@ -24,11 +24,6 @@ app.config.from_object(os.environ["APP_SETTINGS"])
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 
-def init_db():
-    db.init_app(app)
-    db.create_all()
-
-
 def request_handler(url):
     """
     Handle get requests.
@@ -93,8 +88,3 @@ def hello():
         if r:
             html_text_preprocessing(r.text)
     return render_template('index.html')
-
-
-if __name__ == "__main__":
-    init_db()
-    app.run()
