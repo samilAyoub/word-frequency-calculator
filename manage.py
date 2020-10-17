@@ -14,4 +14,6 @@ manager.add_command('db', MigrateCommand)
 
 
 if __name__ == '__main__':
+    # Register SQLAlchemy with app
+    db.init_app(app)
     manager.run()
