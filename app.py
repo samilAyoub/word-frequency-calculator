@@ -30,6 +30,15 @@ def init_db():
 
 
 def request_handler(url):
+    """
+    Handle get requests.
+
+    :param url: URL of a web page
+    :type url: String
+    :returns: response of get request
+    :rtype: Response
+    :raises GetRequestException: if get request failed
+    """
     try:
         r = requests.get(url)
         # r.raise_for_status()
