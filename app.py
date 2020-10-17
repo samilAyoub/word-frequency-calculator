@@ -54,12 +54,13 @@ def html_text_preprocessing(html_text):
     """
 
     # Clean text by removing HTML tags.
+    logger.debug('Text length: %s', len(html_text))
     raw = BeautifulSoup(html_text, 'html.parser').get_text()
-    logger.debug('Text after removing HTML tags from: %s', raw[:100])
+    logger.debug('Text length after deleting HTML tags: %s', len(raw))
     # Set ntlk path.
     nltk.data.path.append('./nltk_data/')
     tokens = nltk.word_tokenize(raw)
-    logger.debug('Text tokens: %s', tokens[:100])
+    logger.debug('Tokens length: %s', len(tokens))
     nltk_text = nltk.Text(tokens)
     # Remove punctuation.
     no_punct = re.compile('.*[A-Za-z].*')
@@ -92,7 +93,7 @@ def store_results(url, result):
 
 @app.route("/", methods=['POST', 'GET'])
 def hello():
-    results = {}
+    result = {}
     errors = []
     if request.method == 'POST':
         # Get URL that user has entred
@@ -100,20 +101,17 @@ def hello():
         logger.debug('URL entred: %s', url)
         try:
             r = request_handler(url)
-            logger.debug('Response: %s', len(r.text))
         except exceptions.GetRequestException as e:
             msg = str(e)
             errors.append(msg)
         if r:
             result = html_text_preprocessing(r.text)
-            logger.debug("Result: %s", result)
-            results = result
             try:
                 store_results(url, result)
-                logger.debug("Stored: %s", result)
+                logger.debug("Result stored in database")
             except exceptions.StoreResultException as e:
                 msg = str(e)
                 errors.append(msg)
                 logger.debug("Store result error: %s", msg)
 
-    return render_template('index.html', errors=errors, results=results)
+    return render_template('index.html', errors=errors, result=result)
