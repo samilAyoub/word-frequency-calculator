@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 from flask import Flask, render_template, request
 
 import exceptions
-from models import db
+from models import db, Result
 from stop_words import stops
 
 logging.basicConfig(level=logging.DEBUG)
@@ -77,8 +77,27 @@ def html_text_preprocessing(html_text):
     return no_stop_words_count
 
 
+def store_results(url, result):
+    """
+    Store a given result to database.
+
+    :param url: URL of the web page, where the result come from
+    :type url: String
+    :param result: the result we want to store
+    :type result: dict
+    """
+    try:
+        result = Result(url=url, result=result)
+        db.session.add(result)
+        db.session.commit()
+    except Exception as e:
+        msg = str(e)
+        raise exceptions.StoreResultException(result, msg)
+
+
 @app.route("/", methods=['POST', 'GET'])
 def hello():
+    results = []
     errors = []
     if request.method == 'POST':
         # Get URL that user has entred
@@ -91,7 +110,15 @@ def hello():
             msg = str(e)
             errors.append(msg)
         if r:
-            html_text_preprocessing(r.text)
+            result = html_text_preprocessing(r.text).items()
+            results.append(result)
+            try:
+                store_results(url, result)
+                logger.debug("Stored: %s", result)
+            except exceptions.StoreResultException as e:
+                msg = str(e)
+                errors.append(msg)
+                logger.debug("Store result error: %s", msg)
     return render_template('index.html')
 
 
