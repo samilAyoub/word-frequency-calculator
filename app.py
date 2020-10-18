@@ -9,7 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 from flask import Flask, render_template, request
 
-import exceptions
+from exceptions import GetRequestException, StoreResultException
 from models import db, Result
 from stop_words import stops
 
@@ -29,7 +29,7 @@ def request_handler(url):
     Handle get requests.
 
     :param url: URL of a web page
-    :type url: String
+    :type url: str
     :returns: response of get request
     :rtype: Response
     :raises GetRequestException: if get request failed
@@ -38,26 +38,29 @@ def request_handler(url):
         r = requests.get(url)
         # r.raise_for_status()
     except requests.exceptions.RequestException as e:
-        msg = str(e)
-        raise exceptions.GetRequestException(url, msg)
+        raise GetRequestException(url, str(e))
     return r
 
 
-def k_most_commons(html_text, k):
+def k_most_commons(html_text, url, k=10, store=True):
     """
     Return k most common words in a given HTML text.
 
     :param html_text: HTML text
+    :param url: URL of the web page, where HTML text is scraped
     :param k: Number of most common words to return
-    :type html_text: String
+    :param store: An option to store or not the result in database
+    :type html_text: str
     :type k: int
+    :type store: boolean
     :returns: List of tuples, each tuple have tow elements. First one is the 
     word, and the second one is its number of occurrences.
     :rtype: List
+    :raises StoreResultException: If storing the result in database is failed
     """
 
-    # Clean text by removing HTML tags.
     logger.debug('Text length: %s', len(html_text))
+    # Clean text by removing HTML tags.
     raw = BeautifulSoup(html_text, 'html.parser').get_text()
     logger.debug('Text length after deleting HTML tags: %s', len(raw))
     # Set ntlk path.
@@ -70,16 +73,23 @@ def k_most_commons(html_text, k):
     raw_words = [w for w in nltk_text if no_punct.match(w)]
     # Eliminate stop words.
     no_stop_words = [w for w in raw_words if w.lower() not in stops]
-    no_stop_words_count = Counter(no_stop_words)
-    return no_stop_words_count.most_common(k)
+    result = Counter(no_stop_words).most_common(k)
+    if store:
+        try:
+            store_results(url, result)
+            logger.info("Result stored in database")
+        except StoreResultException as e:
+            logger.exception(str(e))
+            raise e
+    return result
 
 
 def store_results(url, result):
     """
-    Store a given result to database.
+    Store a given result in database.
 
     :param url: URL of the web page, where the result come from
-    :type url: String
+    :type url: str
     :param result: the result we want to store
     :type result: dict
     """
@@ -88,8 +98,7 @@ def store_results(url, result):
         db.session.add(result)
         db.session.commit()
     except Exception as e:
-        msg = str(e)
-        raise exceptions.StoreResultException(result, msg)
+        raise StoreResultException(result.result, str(e))
 
 
 @app.route("/", methods=['POST', 'GET'])
@@ -102,19 +111,13 @@ def hello():
         logger.debug('URL entred: %s', url)
         try:
             r = request_handler(url)
-        except exceptions.GetRequestException as e:
-            msg = str(e)
-            errors.append(msg)
-        if r:
             # Get 10 most common words.
-            result = k_most_commons(r.text, 10)
+            result = k_most_commons(r.text, url)
             logger.debug("10 most common words: %s", result)
-            try:
-                store_results(url, result)
-                logger.debug("Result stored in database")
-            except exceptions.StoreResultException as e:
-                msg = str(e)
-                errors.append(msg)
-                logger.debug("Store result error: %s", msg)
+        except GetRequestException as e:
+            logger.exception(str(e))
+            errors.append("Request Failed.")
+        except StoreResultException:
+            errors.append("Error while storing the result.")
 
     return render_template('index.html', errors=errors, result=result)

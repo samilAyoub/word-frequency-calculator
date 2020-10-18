@@ -12,7 +12,7 @@ class GetRequestException(Exception):
         super().__init__(msg)
 
     def __str__(self):
-        return f'{self.url} -> {self.msg}'
+        return f'Request Failed.\nURL:{self.url}\nMessage: {self.msg}'
 
 
 class StoreResultException(Exception):
@@ -26,6 +26,7 @@ class StoreResultException(Exception):
     def __init__(self, result, msg):
         self.result = result
         self.msg = msg
+        super().__init__(msg)
 
     def __str__(self):
-        return f'Result:{self.result} -> {self.msg}'
+        return f'Error while storing the result.\nResult:{self.result}\nMessage: {self.msg}'
