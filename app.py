@@ -23,6 +23,9 @@ app.config.from_object(os.environ["APP_SETTINGS"])
 
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+# Register SQLAlchemy with app
+db.init_app(app)
+
 
 def request_handler(url):
     """
@@ -53,27 +56,27 @@ def k_most_commons(html_text, url, k=10, store=True):
     :type html_text: str
     :type k: int
     :type store: boolean
-    :returns: List of tuples, each tuple have tow elements. First one is the 
+    :returns: List of tuples, each tuple have tow elements. First one is the
     word, and the second one is its number of occurrences.
     :rtype: List
     :raises StoreResultException: If storing the result in database is failed
     """
 
-    logger.debug('Text length: %s', len(html_text))
+    logger.debug("Text length: %s", len(html_text))
     # Clean text by removing HTML tags.
-    raw = BeautifulSoup(html_text, 'html.parser').get_text()
-    logger.debug('Text length after deleting HTML tags: %s', len(raw))
+    raw = BeautifulSoup(html_text, "html.parser").get_text()
+    logger.debug("Text length after deleting HTML tags: %s", len(raw))
     # Set ntlk path.
     try:
-        nltk.data.find('tokenizers/punkt')
+        nltk.data.find("tokenizers/punkt")
     except LookupError:
-        nltk.download('punkt')
+        nltk.download("punkt")
         logger.info("Downloading punkt ...")
     tokens = nltk.word_tokenize(raw)
-    logger.debug('Tokens length: %s', len(tokens))
+    logger.debug("Tokens length: %s", len(tokens))
     nltk_text = nltk.Text(tokens)
     # Remove punctuation.
-    no_punct = re.compile('.*[A-Za-z].*')
+    no_punct = re.compile(".*[A-Za-z].*")
     raw_words = [w for w in nltk_text if no_punct.match(w)]
     # Eliminate stop words.
     no_stop_words = [w for w in raw_words if w.lower() not in stops]
@@ -105,14 +108,14 @@ def store_results(url, result):
         raise StoreResultException(result.result, str(e))
 
 
-@app.route("/", methods=['POST', 'GET'])
+@app.route("/", methods=["POST", "GET"])
 def hello():
     result = []
     errors = []
-    if request.method == 'POST':
+    if request.method == "POST":
         # Get URL that user has entred
-        url = request.form['url']
-        logger.debug('URL entred: %s', url)
+        url = request.form["url"]
+        logger.debug("URL entred: %s", url)
         try:
             r = request_handler(url)
             # Get 10 most common words.
@@ -124,4 +127,4 @@ def hello():
         except StoreResultException:
             errors.append("Error while storing the result.")
 
-    return render_template('index.html', errors=errors, result=result)
+    return render_template("index.html", errors=errors, result=result)
