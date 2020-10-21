@@ -64,7 +64,11 @@ def k_most_commons(html_text, url, k=10, store=True):
     raw = BeautifulSoup(html_text, 'html.parser').get_text()
     logger.debug('Text length after deleting HTML tags: %s', len(raw))
     # Set ntlk path.
-    nltk.data.path.append('./nltk_data/')
+    try:
+        nltk.data.find('tokenizers/punkt')
+    except LookupError:
+        nltk.download('punkt')
+        logger.info("Downloading punkt ...")
     tokens = nltk.word_tokenize(raw)
     logger.debug('Tokens length: %s', len(tokens))
     nltk_text = nltk.Text(tokens)
